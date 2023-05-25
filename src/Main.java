@@ -1,12 +1,10 @@
 import mpi.MPI;
 
 public class Main {
-    private static final int NUMBER_ROWS_A = 4;
-    private static final int NUMBER_COLUMNS_A = 4;
-    private static final int NUMBER_COLUMNS_B = 4;
+    private static final int NUMBER_ROWS_A = 2000;
+    private static final int NUMBER_COLUMNS_A = 2000;
+    private static final int NUMBER_COLUMNS_B = 2000;
     private static final int MASTER = 0;
-    private static final int FROM_MASTER = 1;
-    private static final int TO_MASTER = 2;
     public static void main(String[] args) {
         double[][] a = new double[NUMBER_ROWS_A][NUMBER_COLUMNS_A];
         double[][] b = new double[NUMBER_COLUMNS_A][NUMBER_COLUMNS_B];
@@ -23,7 +21,6 @@ public class Main {
         int[] offset = {0};
         int[] rows = {0};
         if(rank == MASTER) {
-            System.out.println("MPI started with " + numTasks + " tasks");
 
             for(int i = 0; i < NUMBER_ROWS_A; i++) {
                 for (int j = 0; j < NUMBER_COLUMNS_A; j++) {
@@ -38,10 +35,11 @@ public class Main {
 
             int rowsPerThread = NUMBER_ROWS_A / numWorkers;
             int extra = NUMBER_ROWS_A % numWorkers;
+            var startTime = System.currentTimeMillis();
 
             for(int dest = 1; dest <= numWorkers; dest++) {
                 rows[0] = (dest <= extra) ? rowsPerThread + 1 : rowsPerThread;
-                System.out.println("Sending " + rows[0] + " rows to task " + dest + " offset="+offset[0]);
+//                System.out.println("Sending " + rows[0] + " rows to task " + dest + " offset="+offset[0]);
 
                 MPI.COMM_WORLD.Isend(offset, 0, 1, MPI.INT, dest, 0);
                 MPI.COMM_WORLD.Isend(rows, 0, 1, MPI.INT, dest, 1);
@@ -50,7 +48,7 @@ public class Main {
 
                 offset[0] = offset[0] + rows[0];
             }
-            System.out.println("****Results: ");
+//            System.out.println("****Results: ");
             for(int source = 1; source <= numWorkers; source++) {
                 var offsetRequest = MPI.COMM_WORLD.Irecv(offset, 0, 1, MPI.INT, source, 4);
                 var rowsRequest = MPI.COMM_WORLD.Irecv(rows, 0, 1, MPI.INT, source, 5);
@@ -58,15 +56,19 @@ public class Main {
                 rowsRequest.Wait();
                 var matrixRequest = MPI.COMM_WORLD.Irecv(c, offset[0], rows[0], MPI.OBJECT, source, 6);
                 matrixRequest.Wait();
-                System.out.println("Data received by master process");
+//                System.out.println("Data received by master process");
             }
+            var endTime = System.currentTimeMillis();
 
-            for(int i = 0; i < NUMBER_ROWS_A; i++) {
-                for (int j = 0; j < NUMBER_COLUMNS_B; j++) {
-                    System.out.print(c[i][j] +" ");
-                }
-                System.out.print('\n');
-            }
+//            for(int i = 0; i < NUMBER_ROWS_A; i++) {
+//                for (int j = 0; j < NUMBER_COLUMNS_B; j++) {
+//                    System.out.print(c[i][j] +" ");
+//                }
+//                System.out.print('\n');
+//            }
+
+            var dur = endTime-startTime;
+            System.out.println("time: " + dur + "ms");
         } else {
             var offsetRequest = MPI.COMM_WORLD.Irecv(offset, 0, 1, MPI.INT, MASTER, 0);
             var rowsRequest = MPI.COMM_WORLD.Irecv(rows, 0, 1, MPI.INT, MASTER, 1);
@@ -80,7 +82,7 @@ public class Main {
             var bRequest = MPI.COMM_WORLD.Irecv(b, 0, NUMBER_COLUMNS_A, MPI.OBJECT, MASTER, 3);
             aRequest.Wait();
             bRequest.Wait();
-            System.out.println("Data was received by " + rank + " process");
+//            System.out.println("Data was received by " + rank + " process");
             for (int k = 0; k < NUMBER_COLUMNS_B; k++) {
                 for (int i = 0; i < rows[0]; i++) {
                     for (int j = 0; j < NUMBER_COLUMNS_A; j++) {
