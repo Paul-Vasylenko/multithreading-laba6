@@ -46,7 +46,7 @@
       </envs>
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="laba6" />
-      <option name="VM_PARAMETERS" value="-jar $MPJ_HOME$\lib\starter.jar" />
+      <option name="VM_PARAMETERS" value="-jar $MPJ_HOME$\lib\starter.jar -np 16" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>

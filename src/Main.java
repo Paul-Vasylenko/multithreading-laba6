@@ -1,9 +1,9 @@
 import mpi.MPI;
 
 public class Main {
-    private static final int NUMBER_ROWS_A = 4;
-    private static final int NUMBER_COLUMNS_A = 4;
-    private static final int NUMBER_COLUMNS_B = 4;
+    private static final int NUMBER_ROWS_A = 100;
+    private static final int NUMBER_COLUMNS_A = 100;
+    private static final int NUMBER_COLUMNS_B = 100;
     private static final int MASTER = 0;
     private static final int FROM_MASTER = 1;
     private static final int TO_MASTER = 2;
@@ -23,7 +23,7 @@ public class Main {
         int[] offset = {0};
         int[] rows = {0};
         if(rank == MASTER) {
-            System.out.println("MPI started with " + numTasks + " tasks");
+//            System.out.println("MPI started with " + numTasks + " tasks");
 
             for(int i = 0; i < NUMBER_ROWS_A; i++) {
                 for (int j = 0; j < NUMBER_COLUMNS_A; j++) {
@@ -38,10 +38,10 @@ public class Main {
 
             int rowsPerThread = NUMBER_ROWS_A / numWorkers;
             int extra = NUMBER_ROWS_A % numWorkers;
-
+            var start = System.currentTimeMillis();
             for(int dest = 1; dest <= numWorkers; dest++) {
                 rows[0] = (dest <= extra) ? rowsPerThread + 1 : rowsPerThread;
-                System.out.println("Sending " + rows[0] + " rows to task " + dest + " offset="+offset[0]);
+//                System.out.println("Sending " + rows[0] + " rows to task " + dest + " offset="+offset[0]);
 
                 MPI.COMM_WORLD.Send(offset, 0, 1, MPI.INT, dest, FROM_MASTER);
                 MPI.COMM_WORLD.Send(rows, 0, 1, MPI.INT, dest, FROM_MASTER);
@@ -50,26 +50,28 @@ public class Main {
 
                 offset[0] = offset[0] + rows[0];
             }
-            System.out.println("****Results: ");
+//            System.out.println("****Results: ");
             for(int source = 1; source <= numWorkers; source++) {
                 MPI.COMM_WORLD.Recv(offset, 0, 1, MPI.INT, source, TO_MASTER);
                 MPI.COMM_WORLD.Recv(rows, 0, 1, MPI.INT, source, TO_MASTER);
                 MPI.COMM_WORLD.Recv(c, offset[0], rows[0], MPI.OBJECT, source, TO_MASTER);
             }
-
-            for(int i = 0; i < NUMBER_ROWS_A; i++) {
-                for (int j = 0; j < NUMBER_COLUMNS_B; j++) {
-                    System.out.print(c[i][j] +" ");
-                }
-                System.out.print('\n');
-            }
+            var end = System.currentTimeMillis();
+            var dur = end - start;
+            System.out.println("time: " + dur);
+//            for(int i = 0; i < NUMBER_ROWS_A; i++) {
+//                for (int j = 0; j < NUMBER_COLUMNS_B; j++) {
+//                    System.out.print(c[i][j] +" ");
+//                }
+//                System.out.print('\n');
+//            }
         } else {
             MPI.COMM_WORLD.Recv(offset, 0, 1, MPI.INT, MASTER, FROM_MASTER);
             MPI.COMM_WORLD.Recv(rows, 0, 1, MPI.INT, MASTER, FROM_MASTER);
             MPI.COMM_WORLD.Recv(a, 0, rows[0], MPI.OBJECT, MASTER, FROM_MASTER);
             MPI.COMM_WORLD.Recv(b, 0, NUMBER_COLUMNS_A, MPI.OBJECT, MASTER, FROM_MASTER);
 
-            System.out.println("Data was received by " + rank + " process");
+//            System.out.println("Data was received by " + rank + " process");
 
             for (int k = 0; k < NUMBER_COLUMNS_B; k++) {
                 for (int i = 0; i < rows[0]; i++) {
